@@ -8,5 +8,5 @@ import reactor.core.publisher.Mono;
 public interface RefreshTokenRepository extends ReactiveMongoRepository<RefreshTokenEntity, String> {
     Mono<RefreshTokenEntity> findByTokenHashAndRevokedFalse(String tokenHash);
     Flux<RefreshTokenEntity> findAllByUserId(String userId);
-    Flux<RefreshTokenEntity> deleteAllByUserId(String userId);
+    Mono<Void> deleteAllByUserId(String userId);
 }

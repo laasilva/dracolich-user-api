@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: dracolich-user-api
+  webflux:
+    base-path: dracolich-user/api/v0/
+  data:
+    mongodb:
+      auto-index-creation: true
+  mongodb:
+    database: ${MONGODB_DATABASE:dracolich-user-db}
+    uri: ${MONGODB_URI:mongodb://localhost:27017/dracolich-user-db}
+    representation:
+      uuid: standard
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: ${PORT:8081}
+
+jwt:
+  private-key: ${JWT_PRIVATE_KEY:classpath:keys/ec-private.pem}
+  public-key: ${JWT_PUBLIC_KEY:classpath:keys/ec-public.pem}
+  access-token-expiration: ${JWT_ACCESS_EXPIRATION:900}
+  refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800}
+  confirmation-token-expiration: ${JWT_CONFIRMATION_EXPIRATION:86400}
+
+app:
+  confirmation-url: ${CONFIRMATION_URL:http://localhost:8081/dracolich-user/api/v0/auth/confirm}
+
+logging:
+  level:
+    dm.dracolich: DEBUG
+    org.springframework.data.mongodb: INFO
+    org.springframework.security: DEBUG
