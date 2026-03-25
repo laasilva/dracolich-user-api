@@ -1,6 +1,6 @@
 package dm.dracolich.user.web.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import dm.dracolich.forge.response.DmdResponse;
 import dm.dracolich.forge.security.JwtAuthenticationWebFilter;
 import dm.dracolich.forge.security.JwtTokenValidator;
@@ -33,7 +33,8 @@ public class SecurityConfig {
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/auth/**").permitAll()
-                        .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
+                        .pathMatchers("/swagger-ui/**", "/swagger-ui.html",
+                                "/v3/api-docs/**", "/webjars/**").permitAll()
                         .pathMatchers("/actuator/**").permitAll()
                         .anyExchange().authenticated()
                 )

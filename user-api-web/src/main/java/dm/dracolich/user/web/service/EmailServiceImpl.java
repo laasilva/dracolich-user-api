@@ -19,7 +19,7 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.confirmation-url}")
     private String confirmationUrl;
 
-    @Value("${spring.mail.username:noreply@dracolich.dm}")
+    @Value("${app.from-address}")
     private String fromAddress;
 
     @Override

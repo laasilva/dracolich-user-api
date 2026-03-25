@@ -37,3 +37,6 @@ build/
 
 ### Keys ###
 **/resources/keys/
+
+### Environment ###
+.env
