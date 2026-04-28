@@ -227,6 +227,26 @@ class AuthServiceImplTest {
                             && re.getHttpStatus() == HttpStatus.BAD_REQUEST)
                     .verify();
         }
+
+        @Test
+        void alreadyActiveAccount_returnsBadRequest() {
+            UserEntity alreadyActive = UserEntity.builder()
+                    .id("user-123")
+                    .accountStatus(AccountStatusEnum.ACTIVE)
+                    .metadata(MetadataEntity.builder()
+                            .createdAt(Instant.now())
+                            .updatedAt(Instant.now())
+                            .build())
+                    .build();
+
+            when(jwtService.validateConfirmationToken("reused-token")).thenReturn(Mono.just("user-123"));
+            when(userRepository.findById("user-123")).thenReturn(Mono.just(alreadyActive));
+
+            StepVerifier.create(authService.confirmAccount("reused-token"))
+                    .expectErrorMatches(e -> e instanceof ResponseException re
+                            && re.getHttpStatus() == HttpStatus.BAD_REQUEST)
+                    .verify();
+        }
     }
 
     @Nested
@@ -365,12 +385,39 @@ class AuthServiceImplTest {
 
             when(refreshTokenRepository.findByTokenHashAndRevokedFalse(anyString()))
                     .thenReturn(Mono.just(storedToken));
+            when(refreshTokenRepository.save(any(RefreshTokenEntity.class)))
+                    .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
             when(userRepository.findById("deleted-user")).thenReturn(Mono.empty());
 
             StepVerifier.create(authService.refresh("orphan-token"))
                     .expectErrorMatches(e -> e instanceof ResponseException re
                             && re.getHttpStatus() == HttpStatus.UNAUTHORIZED)
                     .verify();
+        }
+
+        @Test
+        void revokesOldTokenOnRefresh() {
+            RefreshTokenEntity storedToken = RefreshTokenEntity.builder()
+                    .id("token-id")
+                    .userId("user-123")
+                    .tokenHash("old-hash")
+                    .expiresAt(Instant.now().plusSeconds(3600))
+                    .revoked(false)
+                    .build();
+
+            when(refreshTokenRepository.findByTokenHashAndRevokedFalse(anyString()))
+                    .thenReturn(Mono.just(storedToken));
+            when(refreshTokenRepository.save(any(RefreshTokenEntity.class)))
+                    .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+            when(userRepository.findById("user-123")).thenReturn(Mono.just(activeUser));
+            when(jwtService.generateAccessToken(activeUser)).thenReturn("new-access");
+            when(jwtService.generateRefreshToken()).thenReturn("new-refresh");
+
+            StepVerifier.create(authService.refresh("old-refresh-token"))
+                    .assertNext(response -> assertNotNull(response.accessToken()))
+                    .verifyComplete();
+
+            assertTrue(storedToken.getRevoked());
         }
     }
 

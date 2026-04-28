@@ -96,6 +96,9 @@ public class AuthServiceImpl implements AuthService {
                 .flatMap(userRepository::findById)
                 .switchIfEmpty(Mono.error(buildException(ErrorCodes.DMD014, HttpStatus.BAD_REQUEST)))
                 .flatMap(user -> {
+                    if (user.getAccountStatus() != AccountStatusEnum.PENDING_CONFIRMATION) {
+                        return Mono.error(buildException(ErrorCodes.DMD014, HttpStatus.BAD_REQUEST));
+                    }
                     user.setAccountStatus(AccountStatusEnum.ACTIVE);
                     user.getMetadata().setUpdatedAt(Instant.now());
                     return userRepository.save(user);
@@ -132,7 +135,9 @@ public class AuthServiceImpl implements AuthService {
                     if (storedToken.getExpiresAt().isBefore(Instant.now())) {
                         return Mono.error(buildException(ErrorCodes.DMD017, HttpStatus.UNAUTHORIZED));
                     }
-                    return userRepository.findById(storedToken.getUserId());
+                    storedToken.setRevoked(true);
+                    return refreshTokenRepository.save(storedToken)
+                            .then(userRepository.findById(storedToken.getUserId()));
                 })
                 .switchIfEmpty(Mono.error(buildException(ErrorCodes.DMD017, HttpStatus.UNAUTHORIZED)))
                 .flatMap(this::issueTokens);

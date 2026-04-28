@@ -40,3 +40,4 @@ build/
 
 ### Environment ###
 .env
+**/resources/application-dev.yml

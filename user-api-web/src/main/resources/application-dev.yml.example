@@ -1,0 +1,27 @@
+spring:
+  data:
+    mongodb:
+      auto-index-creation: true
+  mongodb:
+    database: dracolich-user-db
+    uri: mongodb://localhost:27017/dracolich-user-db
+  mail:
+    host: email-smtp.us-east-1.amazonaws.com
+    username: <your-ses-username>
+    password: <your-ses-password>
+
+jwt:
+  private-key: classpath:keys/ec-private.pem
+  public-key: classpath:keys/ec-public.pem
+
+app:
+  confirmation-url: http://localhost:8081/dracolich-user/api/v0/auth/confirm
+
+cors:
+  allowed-origins: http://localhost:3000,http://localhost:5173
+
+logging:
+  level:
+    dm.dracolich: DEBUG
+    org.springframework.data.mongodb: INFO
+    org.springframework.security: INFO
