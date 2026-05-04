@@ -26,8 +26,8 @@ server:
   port: ${PORT:8080}
 
 jwt:
-  private-key: ${JWT_PRIVATE_KEY}
-  public-key: ${JWT_PUBLIC_KEY}
+  private-key: ${DRACOLICH_JWT_PRIVATE_KEY:classpath:keys/ec-private.pem}
+  public-key: ${DRACOLICH_JWT_PUBLIC_KEY:classpath:keys/ec-public.pem}
   access-token-expiration: ${JWT_ACCESS_EXPIRATION:900}
   refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800}
   confirmation-token-expiration: ${JWT_CONFIRMATION_EXPIRATION:86400}
