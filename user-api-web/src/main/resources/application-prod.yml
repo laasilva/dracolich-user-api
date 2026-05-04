@@ -1,0 +1,10 @@
+spring:
+  data:
+    mongodb:
+      auto-index-creation: false
+
+logging:
+  level:
+    dm.dracolich: INFO
+    org.springframework.data.mongodb: WARN
+    org.springframework.security: WARN

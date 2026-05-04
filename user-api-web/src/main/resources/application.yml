@@ -23,7 +23,7 @@ spring:
             enable: true
 
 server:
-  port: ${PORT:8081}
+  port: ${PORT:8080}
 
 jwt:
   private-key: ${JWT_PRIVATE_KEY}
