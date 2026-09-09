@@ -5,28 +5,32 @@ Authentication and user management service for the Dracolich platform. Built wit
 ## Prerequisites
 
 - Java 25
-- MongoDB running on `localhost:27017`
 - Maven 3.9+
-- ES384 key pair (see [Key Generation](#key-generation))
+- `~/.m2/settings-personal.xml` with GitHub Packages credentials (for `dm.dracolich.*` artifacts)
+- MongoDB and an ES384 key pair (see [Key Generation](#key-generation)) — only if you intend to *run* it
 
-## Quick Start
+## Build
 
 ```bash
-# Generate dev keys (one-time)
-mkdir -p user-api-web/src/main/resources/keys
-openssl ecparam -genkey -name secp384r1 -noout -out user-api-web/src/main/resources/keys/ec-private.pem
-openssl ec -in user-api-web/src/main/resources/keys/ec-private.pem -pubout -out user-api-web/src/main/resources/keys/ec-public.pem
-
-# Build
 mvn clean install -s ~/.m2/settings-personal.xml
-
-# Run
-mvn spring-boot:run -pl user-api-web -s ~/.m2/settings-personal.xml
 ```
 
-The API starts on `http://localhost:8081/dracolich-user/api/v0/`.
+## Running
 
-Swagger UI is available at `http://localhost:8081/dracolich-user/api/v0/swagger-ui.html`.
+The service is deployed to the `dracolich-dev` cluster and reached through
+`https://dev.dracolich.app/dracolich/user/api/v0/`. Backend changes reach it through the CI pipeline
+(see the workspace `CLAUDE.md`), so `mvn clean install` is the verification step for code work.
+
+Running it locally is expected when developing a feature or chasing a bug here. Create an uncommitted
+`user-api-web/src/main/resources/application-local.yml` and run with `SPRING_PROFILES_ACTIVE=local`;
+`application-dev.yml.example` is a starting point. Both the local config and the keys are gitignored
+and must stay that way — **never commit local config or a private key**.
+
+The keys are not in the repo, so generate a pair first (see [Key Generation](#key-generation)) and
+either set `jwt.private-key` / `jwt.public-key` in your local config or drop the files in
+`user-api-web/src/main/resources/keys/`.
+
+Swagger UI: `http://<host>/dracolich/user/api/v0/swagger-ui.html`.
 
 ## Configuration
 
@@ -34,18 +38,21 @@ All configuration is in `user-api-web/src/main/resources/application.yml`. Key e
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `8081` | Server port |
-| `MONGODB_URI` | `mongodb://localhost:27017/dracolich-user-db` | MongoDB connection |
-| `MONGODB_DATABASE` | `dracolich-user-db` | Database name |
-| `JWT_PRIVATE_KEY` | `classpath:keys/ec-private.pem` | ES384 private key path |
-| `JWT_PUBLIC_KEY` | `classpath:keys/ec-public.pem` | ES384 public key path |
+| `PORT` | `8080` | Server port. Actuator listens separately on `7980`. |
+| `MONGODB_URI` | _(required)_ | MongoDB connection |
+| `MONGODB_DATABASE` | _(required)_ | Database name |
+| `DRACOLICH_JWT_PRIVATE_KEY` | `classpath:keys/ec-private.pem` | ES384 private key path (this is the **only** service that gets it) |
+| `DRACOLICH_JWT_PUBLIC_KEY` | `classpath:keys/ec-public.pem` | ES384 public key path |
 | `JWT_ACCESS_EXPIRATION` | `900` | Access token TTL (seconds) |
 | `JWT_REFRESH_EXPIRATION` | `604800` | Refresh token TTL (seconds) |
-| `MAIL_HOST` | `smtp.gmail.com` | SMTP host |
+| `JWT_CONFIRMATION_EXPIRATION` | `86400` | Email confirmation token TTL (seconds) |
+| `MAIL_HOST` | _(empty)_ | SMTP host |
 | `MAIL_PORT` | `587` | SMTP port |
 | `MAIL_USERNAME` | _(empty)_ | SMTP username |
 | `MAIL_PASSWORD` | _(empty)_ | SMTP password |
-| `CONFIRMATION_URL` | `http://localhost:8081/dracolich-user/api/v0/auth/confirm` | Email confirmation link base URL |
+| `MAIL_FROM` | `no-reply@dracolich.app` | From address on confirmation email |
+| `CONFIRMATION_URL` | `https://dev.dracolich.app/dracolich/user/api/v0/auth/confirm` | Email confirmation link base URL |
+| `CORS_ALLOWED_ORIGINS` | _(empty)_ | Allowed CORS origins |
 
 ## Key Generation
 
@@ -56,11 +63,13 @@ openssl ecparam -genkey -name secp384r1 -noout -out ec-private.pem
 openssl ec -in ec-private.pem -pubout -out ec-public.pem
 ```
 
-For cross-service token verification, distribute `ec-public.pem` to other services (library-api, action-api). Only user-api needs the private key.
+For cross-service token verification, distribute `ec-public.pem` to the other services
+(mtg-library-api, ai-api, mtg-deck-builder-api), which verify with forge's `EcPublicKeyJwtValidator`.
+**Only user-api ever gets the private key** — never copy it into another repo or image.
 
 ## API Endpoints
 
-Base path: `/dracolich-user/api/v0/`
+Base path: `/dracolich/user/api/v0/`
 
 All responses are wrapped in the standard `DmdResponse` envelope:
 
@@ -304,3 +313,11 @@ Authorization: Bearer eyJhbGciOiJFUzM4NCIs...
 ```bash
 mvn test -s ~/.m2/settings-personal.xml
 ```
+
+Coverage is thin — 3 test classes against 31 main classes.
+
+---
+
+Part of the [Dracolich](https://github.com/laasilva?tab=repositories&q=dracolich) platform. For the
+cross-repo picture — service topology, release pipeline, shared conventions — see the workspace guide
+at `~/Dev/Dracolich/CLAUDE.md`.
